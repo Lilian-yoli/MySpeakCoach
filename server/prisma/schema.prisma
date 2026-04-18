@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MemoryCard {
+  id        Int      @id @default(autoincrement())
+  term      String
+  meaning   String
+  createdAt DateTime @default(now())
+}
