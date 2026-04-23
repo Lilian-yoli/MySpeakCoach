@@ -5,13 +5,13 @@ import { useAudioStreamer } from './hooks/useAudioStreamer';
 import { GeminiLiveClient } from './services/GeminiLiveClient';
 import ImmersiveOrb from './components/ImmersiveOrb';
 import RefinementDashboard from './components/RefinementDashboard';
+import ReviewSessionPage from './components/ReviewSessionPage';
 
 function App() {
   const { isActive, transcript, startSession, endSession, addTranscript } = useSessionManager();
-  const [showDashboard, setShowDashboard] = useState(false);
+  const [currentView, setCurrentView] = useState('landing');
   const geminiClientRef = useRef(null);
   const playbackCtxRef = useRef(null);
-
   const audioQueueRef = useRef(0);
 
   const handleAIAudioResponse = useCallback((base64PCM) => {
@@ -41,7 +41,6 @@ function App() {
     source.buffer = audioBuffer;
     source.connect(audioCtx.destination);
     
-    // Manage playback queue
     const currentTime = audioCtx.currentTime;
     if (audioQueueRef.current < currentTime) {
       audioQueueRef.current = currentTime;
@@ -62,16 +61,14 @@ function App() {
 
   const { isRecording, volume, error, startRecording, stopRecording } = useAudioStreamer(handleAudioData);
 
-  const handleStart = async () => {
-    setShowDashboard(false);
+  const handleStartLiveSpeak = async () => {
+    setCurrentView('live-speak');
     startSession();
     await startRecording();
     
-    // Connect to actual Gemini API!
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     geminiClientRef.current = new GeminiLiveClient(apiKey, handleAIAudioResponse, handleTurnComplete);
     
-    // Initialize playback context securely during the click event
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     playbackCtxRef.current = new AudioContextClass({ sampleRate: 24000 });
     audioQueueRef.current = playbackCtxRef.current.currentTime;
@@ -81,19 +78,15 @@ function App() {
       await geminiClientRef.current.connect(
         "You are an English role-play assistant. Keep your responses under 3 sentences. Be extremely concise. Focus on immersive back-and-forth conversation."
       );
-      console.log('[App] ✅ Connected! Sending initial text...');
       addTranscript('sys', 'Connected to Gemini Live');
-      
-      // Proactively trigger the AI to start speaking
       geminiClientRef.current.sendText("Hello! Please greet me briefly and ask what topic I want to role-play today.");
-      console.log('[App] Initial text sent.');
     } catch(err) {
       console.error(err);
       addTranscript('sys', 'Failed to connect. Did you add VITE_GEMINI_API_KEY to .env.local?');
     }
   };
 
-  const handleEnd = () => {
+  const handleEndLiveSpeak = () => {
     if (geminiClientRef.current) geminiClientRef.current.disconnect();
     if (playbackCtxRef.current) {
       playbackCtxRef.current.close().catch(console.error);
@@ -101,14 +94,23 @@ function App() {
     }
     stopRecording();
     endSession();
-    setShowDashboard(true);
+    setCurrentView('dashboard');
   };
 
-  if (isActive) {
+  const handleStartMemoryCards = () => {
+    setCurrentView('memory-cards');
+  };
+
+  const resetToLanding = () => {
+    setCurrentView('landing');
+  };
+
+  // Rendering logic based on state
+  if (currentView === 'live-speak' && isActive) {
     return (
       <div className="active-session" style={{ textAlign: 'center', height: '100vh', display: 'flex', flexDirection: 'column', padding: '2rem' }}>
         <div style={{ alignSelf: 'flex-end' }}>
-          <button className="btn btn-outline" onClick={handleEnd} style={{ padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>End Session</button>
+          <button className="btn btn-outline" onClick={handleEndLiveSpeak}>End Session</button>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           {error ? (
@@ -126,15 +128,28 @@ function App() {
     );
   }
 
-  if (showDashboard) {
+  if (currentView === 'dashboard') {
     return (
       <div className="app-container" style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <RefinementDashboard transcript={transcript} onRestart={handleStart} />
+        <RefinementDashboard transcript={transcript} onRestart={handleStartLiveSpeak} />
       </div>
     );
   }
 
-  // Original Landing Page UI
+  if (currentView === 'memory-cards') {
+    return (
+      <div className="app-container">
+        <nav className="navbar">
+          <div className="logo cursor-pointer" onClick={resetToLanding}>
+            <div className="logo-icon" />
+            MySpeak
+          </div>
+        </nav>
+        <ReviewSessionPage onBack={resetToLanding} />
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <nav className="navbar">
@@ -145,11 +160,10 @@ function App() {
         <div className="nav-links">
           <a href="#features" className="nav-link">Features</a>
           <a href="#pricing" className="nav-link">Pricing</a>
-          <a href="#community" className="nav-link">Community</a>
         </div>
         <div className="auth-buttons">
           <button className="btn btn-ghost">Log In</button>
-          <button className="btn btn-primary">Get Started</button>
+          <button className="btn btn-primary">Sign Up</button>
         </div>
       </nav>
 
@@ -159,10 +173,23 @@ function App() {
           Master any language with <span>intelligent</span> coaching.
         </h1>
         <p className="hero-desc">
-          MySpeak uses cutting-edge AI to analyze your pronunciation, provide real-time feedback, and help you speak with absolute confidence.
+          Choose your learning path. Deep immersion or targeted practice.
         </p>
-        <div className="hero-actions">
-          <button className="btn btn-primary btn-large" onClick={handleStart}>Start Immersive Session</button>
+        
+        <div className="hero-actions" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
+          <div className="feature-select-card" onClick={handleStartLiveSpeak}>
+            <div className="feature-icon">🎙️</div>
+            <h3>Live Speaking</h3>
+            <p>Real-time AI conversation practice</p>
+            <button className="btn btn-primary">Start Speaking</button>
+          </div>
+          
+          <div className="feature-select-card" onClick={handleStartMemoryCards}>
+            <div className="feature-icon">🎴</div>
+            <h3>Memory Cards</h3>
+            <p>Master vocabulary with AI smart cards</p>
+            <button className="btn btn-outline">Explore Cards</button>
+          </div>
         </div>
       </main>
     </div>
