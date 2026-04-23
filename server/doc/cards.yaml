@@ -1,0 +1,162 @@
+paths:
+  batch:
+    post:
+      summary: Create Memory Cards in Batch
+      description: Process an array of text inputs for translation and save them as memory cards.
+      tags:
+        - Cards
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - inputs
+              properties:
+                inputs:
+                  type: array
+                  description: Array of strings to be translated and saved.
+                  items:
+                    type: string
+                  example: ["Hello", "How are you?"]
+      responses:
+        '200':
+          description: Successfully created batch of cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 2
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        originalText:
+                          type: string
+                          example: "Hello"
+                        translatedText:
+                          type: string
+                          example: "你好"
+                        userId:
+                          type: integer
+                          example: 1
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+                        reviewStage:
+                          type: integer
+                          example: 0
+                        nextReviewDate:
+                          type: string
+                          format: date-time
+        '400':
+          description: Invalid or empty inputs array
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Invalid or empty inputs array"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: "Internal server error"
+                  error:
+                    type: string
+  due:
+    get:
+      summary: Get cards due for review
+      tags: [Cards]
+      responses:
+        '200':
+          description: A list of due cards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        originalText:
+                          type: string
+                        translatedText:
+                          type: string
+                        userId:
+                          type: integer
+                        reviewStage:
+                          type: integer
+                        nextReviewDate:
+                          type: string
+                          format: date-time
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
+  '{id}/review':
+    post:
+      summary: Mark a card as reviewed and schedule next review
+      tags: [Cards]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Card ID
+      responses:
+        '200':
+          description: Updated card with new scheduled date
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  card:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      reviewStage:
+                        type: integer
+                      nextReviewDate:
+                        type: string
+                        format: date-time

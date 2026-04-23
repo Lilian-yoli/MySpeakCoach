@@ -1,0 +1,21 @@
+openapi: 3.0.0
+info:
+  title: MySpeak API
+  version: 1.0.0
+  description: API documentation for MySpeak backend
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+
+paths:
+  /api/health:
+    $ref: './health.yaml#/paths/root'
+  
+  /api/cards/batch:
+    $ref: './cards.yaml#/paths/batch'
+
+  /api/cards/due:
+    $ref: './cards.yaml#/paths/due'
+
+  /api/cards/{id}/review:
+    $ref: './cards.yaml#/paths/{id}~1review'

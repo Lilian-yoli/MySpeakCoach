@@ -1,0 +1,21 @@
+paths:
+  root:
+    get:
+      summary: Health check
+      description: Check if the backend is running properly.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Backend is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: Backend is running

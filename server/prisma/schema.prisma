@@ -7,9 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model MemoryCard {
+model User {
   id        Int      @id @default(autoincrement())
-  term      String
-  meaning   String
+  account   String   @unique
+  password  String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cards     Card[]
+}
+
+enum CardType {
+  CLOZE
+  L1_PROMPT
+  CONTEXT
+}
+
+model Card {
+  id             Int      @id @default(autoincrement())
+  originalText   String
+  question       String
+  answer         String
+  cardType       CardType
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  reviewStage    Int      @default(0)
+  nextReviewDate DateTime @default(now())
 }
