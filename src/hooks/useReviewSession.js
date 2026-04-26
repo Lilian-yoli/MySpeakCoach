@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getAuthHeader } from './useAuth';
 
 const API_BASE = 'http://localhost:3001/api';
 
@@ -23,7 +24,7 @@ export function useReviewSession() {
     setStatus('loading');
     setErrorMessage('');
     try {
-      const res = await fetch(`${API_BASE}/cards/due`);
+      const res = await fetch(`${API_BASE}/cards/due`, { headers: getAuthHeader() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message || 'Failed to load cards');
 
@@ -56,7 +57,7 @@ export function useReviewSession() {
     try {
       const res = await fetch(`${API_BASE}/cards/${card.id}/review`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.message || 'Failed to submit review');

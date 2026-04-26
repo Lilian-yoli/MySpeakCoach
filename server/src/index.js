@@ -8,6 +8,8 @@ import SwaggerParser from '@apidevtools/swagger-parser';
 
 import healthRoute from './routes/health.js';
 import cardsRoute from './routes/cards.js';
+import authRoute from './routes/auth.js';
+import { authenticate } from './middleware/authMiddleware.js';
 
 dotenv.config();
 
@@ -21,7 +23,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/health', healthRoute);
-app.use('/api/cards', cardsRoute);
+app.use('/api/auth', authRoute);
+app.use('/api/cards', authenticate, cardsRoute);
 
 // Setup Swagger UI
 const swaggerDocPath = path.join(__dirname, '../doc/swagger.yaml');

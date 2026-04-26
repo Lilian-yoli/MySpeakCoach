@@ -1,10 +1,8 @@
 import { useState, useCallback } from 'react';
+import { getAuthHeader } from './useAuth';
 
 const API_BASE = 'http://localhost:3001/api';
 
-/**
- * 將卡片陣列依 originalText 分組，回傳 [{ originalText, cards[] }]
- */
 function groupByOriginalText(cards) {
   const map = new Map();
   for (const card of cards) {
@@ -16,14 +14,14 @@ function groupByOriginalText(cards) {
 
 export function useCardManager() {
   const [groups, setGroups] = useState([]);
-  const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'ready' | 'error'
+  const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
   const loadCards = useCallback(async () => {
     setStatus('loading');
     setErrorMessage('');
     try {
-      const res = await fetch(`${API_BASE}/cards`);
+      const res = await fetch(`${API_BASE}/cards`, { headers: getAuthHeader() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message || 'Failed to load cards');
       setGroups(groupByOriginalText(json.data));
@@ -34,48 +32,48 @@ export function useCardManager() {
     }
   }, []);
 
-  // 傳入群組中任一張卡片的 id，後端會刪除同一 originalText 的整組
   const deleteGroup = useCallback(async (anyCardId, originalText) => {
-    const res = await fetch(`${API_BASE}/cards/${anyCardId}`, { method: 'DELETE' });
+    const res = await fetch(`${API_BASE}/cards/${anyCardId}`, {
+      method: 'DELETE',
+      headers: getAuthHeader(),
+    });
     const json = await res.json();
     if (!json.success) throw new Error(json.message || 'Delete failed');
-
     setGroups(prev => prev.filter(g => g.originalText !== originalText));
   }, []);
 
   const updateCard = useCallback(async (cardId, question, answer) => {
     const res = await fetch(`${API_BASE}/cards/${cardId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ question, answer }),
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.message || 'Update failed');
-
     setGroups(prev =>
       prev.map(g => ({
         ...g,
-        cards: g.cards.map(c => c.id === cardId ? { ...c, question, answer } : c)
+        cards: g.cards.map(c => c.id === cardId ? { ...c, question, answer } : c),
       }))
     );
     return json.card;
   }, []);
 
-  const continueSentence = useCallback(async (sentence) => {
-    const res = await fetch(`${API_BASE}/cards/continue`, {
+  const addCards = useCallback(async (sentences) => {
+    const res = await fetch(`${API_BASE}/cards/batch`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sentence }),
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ inputs: sentences }),
     });
     const json = await res.json();
-    if (!json.success) throw new Error(json.message || 'Failed to get continuations');
-    return json.continuations;
+    if (!json.success) throw new Error(json.message || 'Failed to create cards');
+    return json.data;
   }, []);
 
   const suggestSentences = useCallback(async (query) => {
     const res = await fetch(`${API_BASE}/cards/suggest`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ query }),
     });
     const json = await res.json();
@@ -83,15 +81,15 @@ export function useCardManager() {
     return json.suggestions;
   }, []);
 
-  const addCards = useCallback(async (sentences) => {
-    const res = await fetch(`${API_BASE}/cards/batch`, {
+  const continueSentence = useCallback(async (sentence) => {
+    const res = await fetch(`${API_BASE}/cards/continue`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inputs: sentences }),
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ sentence }),
     });
     const json = await res.json();
-    if (!json.success) throw new Error(json.message || 'Failed to create cards');
-    return json.data;
+    if (!json.success) throw new Error(json.message || 'Failed to get continuations');
+    return json.continuations;
   }, []);
 
   return { groups, status, errorMessage, loadCards, deleteGroup, updateCard, addCards, suggestSentences, continueSentence };

@@ -2,13 +2,16 @@ import { useState, useCallback, useRef } from 'react';
 import './App.css';
 import { useSessionManager } from './hooks/useSessionManager';
 import { useAudioStreamer } from './hooks/useAudioStreamer';
+import { useAuth } from './hooks/useAuth';
 import { GeminiLiveClient } from './services/GeminiLiveClient';
 import ImmersiveOrb from './components/ImmersiveOrb';
 import RefinementDashboard from './components/RefinementDashboard';
 import ReviewSessionPage from './components/ReviewSessionPage';
 import CardManagerPage from './components/CardManagerPage';
+import AuthPage from './components/AuthPage';
 
 function App() {
+  const { isLoggedIn, user, login, register, logout } = useAuth();
   const { isActive, transcript, startSession, endSession, addTranscript } = useSessionManager();
   const [currentView, setCurrentView] = useState('landing');
   const geminiClientRef = useRef(null);
@@ -111,6 +114,10 @@ function App() {
   };
 
   // Rendering logic based on state
+  if (!isLoggedIn) {
+    return <AuthPage onLogin={login} onRegister={register} />;
+  }
+
   if (currentView === 'live-speak' && isActive) {
     return (
       <div className="active-session" style={{ textAlign: 'center', height: '100vh', display: 'flex', flexDirection: 'column', padding: '2rem' }}>
@@ -180,9 +187,9 @@ function App() {
           <a href="#features" className="nav-link">Features</a>
           <a href="#pricing" className="nav-link">Pricing</a>
         </div>
-        <div className="auth-buttons">
-          <button className="btn btn-ghost">Log In</button>
-          <button className="btn btn-primary">Sign Up</button>
+        <div className="auth-buttons" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ color: '#94a3b8', fontSize: '0.85em' }}>{user?.account}</span>
+          <button className="btn btn-ghost" onClick={logout}>登出</button>
         </div>
       </nav>
 
