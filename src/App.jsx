@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import './App.css';
 import { useSessionManager } from './hooks/useSessionManager';
 import { useAudioStreamer } from './hooks/useAudioStreamer';
@@ -15,9 +15,14 @@ import { SUPPORTED_LANGUAGES } from './constants/languages';
 
 function App() {
   const { isLoggedIn, user, login, register, logout } = useAuth();
-  const { registeredLangs, activeLang, setActiveLang, addLanguage, removeLanguage } = useLanguage();
+  const { registeredLangs, activeLang, setActiveLang, addLanguage, removeLanguage, loadLanguages } = useLanguage();
   const { isActive, transcript, startSession, endSession, addTranscript } = useSessionManager();
   const [currentView, setCurrentView] = useState('landing');
+
+  // 登入後重新載入語言清單（mount 時若尚未登入，useLanguage 內的 effect 會拿不到 token）
+  useEffect(() => {
+    if (isLoggedIn) loadLanguages();
+  }, [isLoggedIn, loadLanguages]);
   const geminiClientRef = useRef(null);
   const playbackCtxRef = useRef(null);
   const audioQueueRef = useRef(0);

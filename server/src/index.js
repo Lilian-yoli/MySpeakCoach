@@ -12,7 +12,7 @@ import authRoute from './routes/auth.js';
 import languagesRoute from './routes/languages.js';
 import { authenticate } from './middleware/authMiddleware.js';
 
-dotenv.config();
+dotenv.config({ override: true });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
