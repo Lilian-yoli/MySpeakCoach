@@ -20,7 +20,11 @@ const __dirname = path.dirname(__filename);
 export const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
 app.use(express.json());
 
 app.use('/api/health', healthRoute);
