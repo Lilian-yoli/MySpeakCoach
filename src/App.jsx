@@ -188,7 +188,7 @@ function App() {
           Choose your learning path. Deep immersion or targeted practice.
         </p>
 
-        <div className="hero-actions" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
+        <div className="hero-actions">
           <div className="feature-select-card" onClick={handleStartLiveSpeak}>
             <div className="feature-icon">🎙️</div>
             <h3>Live Speaking</h3>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useCardManager } from '../hooks/useCardManager';
 import { SUPPORTED_LANGUAGES } from '../constants/languages';
+import './CardManagerPage.css';
 
 const TYPE_COLORS = {
   CLOZE:     { bg: '#1e3a5f', border: '#3b82f6', label: '克漏字' },
@@ -140,7 +141,7 @@ function ContinueSentenceForm({ onContinue, onAdd }) {
           <p style={{ color: '#64748b', fontSize: '0.8em', margin: '0 0 0.75rem 0' }}>
             輸入一句英文，AI 提供 5 種道地的接話方式。
           </p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="cm-inline-row">
             <input
               ref={inputRef}
               type="text"
@@ -487,7 +488,7 @@ function AskAIForm({ onSuggest, onAdd }) {
         <div style={{ background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(99,102,241,0.4)', borderRadius: '10px', padding: '1.25rem' }}>
           <p style={{ color: '#f1f5f9', fontWeight: 500, margin: '0 0 0.5rem 0' }}>詢問 AI 怎麼說</p>
           <p style={{ color: '#64748b', fontSize: '0.8em', margin: '0 0 0.75rem 0' }}>用中文描述你想表達的意思，AI 將提供幾個道地英文句子。</p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="cm-inline-row">
             <input
               ref={inputRef}
               type="text"
@@ -591,13 +592,13 @@ export default function CardManagerPage({ onBack, activeLang = 'en' }) {
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem', gap: '1rem' }}>
+    <div className="cm-page">
+      <div className="cm-header">
         <button className="btn btn-ghost" onClick={onBack}>← 返回</button>
         <h2 style={{ color: '#f8fafc', margin: 0 }}>我的卡片庫</h2>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+      <div className="cm-toolbar">
         <AddCardsForm onAdd={handleAddCards} />
         <CSVImportForm onAdd={handleAddCards} />
         <ContinueSentenceForm onContinue={continueSentence} onAdd={handleAddCards} />
@@ -625,8 +626,9 @@ export default function CardManagerPage({ onBack, activeLang = 'en' }) {
 
         return (
           <div key={originalText} style={{ marginBottom: '1rem', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.25rem', gap: '0.5rem' }}>
+            <div className="cm-group-header">
               <button
+                className="cm-group-title-btn"
                 onClick={() => toggleGroup(originalText)}
                 style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left', padding: 0, minWidth: 0 }}
               >
@@ -637,7 +639,7 @@ export default function CardManagerPage({ onBack, activeLang = 'en' }) {
               </button>
 
               {/* Move to language */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div className="cm-group-move-select" style={{ position: 'relative', flexShrink: 0 }}>
                 <select
                   value=""
                   disabled={isMoving}
@@ -662,6 +664,7 @@ export default function CardManagerPage({ onBack, activeLang = 'en' }) {
               </div>
 
               <button
+                className="cm-group-delete-btn"
                 onClick={() => handleDeleteGroup(cards, originalText)}
                 disabled={isDeleting}
                 style={{ flexShrink: 0, fontSize: '0.8em', padding: '0.3rem 0.8rem', background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '6px', cursor: 'pointer', opacity: isDeleting ? 0.5 : 1 }}

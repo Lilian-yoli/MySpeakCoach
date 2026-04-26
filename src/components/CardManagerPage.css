@@ -1,0 +1,85 @@
+/* ─── CardManagerPage layout ──────────────────────────────────────────── */
+.cm-page {
+  max-width: 800px;
+  margin: var(--navbar-h) auto 0;
+  padding: 2rem;
+}
+
+.cm-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.cm-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ─── Group header row ────────────────────────────────────────────────── */
+.cm-group-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  gap: 0.5rem;
+}
+
+/* ─── Form inline rows (input + buttons) ─────────────────────────────── */
+.cm-inline-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .cm-page {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cm-page {
+    padding: 1rem;
+  }
+
+  .cm-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .cm-group-header {
+    flex-wrap: wrap;
+    padding: 0.85rem 1rem;
+    gap: 0.4rem;
+  }
+
+  /* sentence label takes full width */
+  .cm-group-title-btn {
+    width: 100%;
+    order: 0;
+  }
+
+  /* move-language select and delete button sit side-by-side below */
+  .cm-group-move-select,
+  .cm-group-delete-btn {
+    order: 1;
+    flex-shrink: 0;
+  }
+
+  /* Form inline rows: stack on phone */
+  .cm-inline-row {
+    flex-wrap: wrap;
+  }
+
+  .cm-inline-row input {
+    width: 100%;
+    flex: unset !important;
+  }
+
+  .cm-inline-row button {
+    flex-shrink: 0;
+  }
+}

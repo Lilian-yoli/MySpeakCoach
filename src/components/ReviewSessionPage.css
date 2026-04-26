@@ -15,8 +15,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 0 2rem;
-  /* push it below the fixed navbar */
-  margin-top: 80px;
+  margin-top: var(--navbar-h);
 }
 
 .review-close-btn {
@@ -390,4 +389,133 @@
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
   max-width: 480px;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .review-page {
+    padding: 0 1.25rem 3rem;
+  }
+
+  .review-topbar {
+    padding: 1.25rem 0 1.5rem;
+  }
+
+  .review-progress-wrap {
+    margin-bottom: 2rem;
+  }
+
+  .review-card {
+    padding: 2rem 1.75rem 1.75rem;
+    border-radius: 20px;
+  }
+
+  .card-question {
+    font-size: 1.25rem;
+  }
+
+  .card-answer-text {
+    font-size: 1.1rem;
+  }
+}
+
+/* Phone */
+@media (max-width: 480px) {
+  :root { --navbar-h: 56px; }
+
+  .review-page {
+    padding: 0 1rem 2rem;
+  }
+
+  .review-topbar {
+    padding: 1rem 0 1.25rem;
+  }
+
+  .review-progress-wrap {
+    margin-bottom: 1.5rem;
+  }
+
+  .review-card {
+    padding: 1.5rem 1.25rem 1.5rem;
+    border-radius: 16px;
+  }
+
+  .card-type-badge {
+    font-size: 0.7rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-question {
+    font-size: 1.1rem;
+    margin-bottom: 0;
+    min-height: unset;
+  }
+
+  .card-answer-text {
+    font-size: 1rem;
+  }
+
+  .answer-input-area {
+    margin-top: 1.25rem;
+  }
+
+  .answer-input {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .card-actions {
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+
+  .btn-reveal,
+  .btn-got-it {
+    width: 100%;
+    padding: 0.9rem 1.25rem;
+  }
+
+  .btn-skip {
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem;
+  }
+
+  .stage-row {
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .stage-dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  .review-center-screen {
+    padding-top: 4rem;
+    gap: 1rem;
+  }
+
+  .review-center-screen .big-icon {
+    font-size: 3.5rem;
+  }
+
+  .review-center-screen h2 {
+    font-size: 1.5rem;
+  }
+
+  .review-center-screen p {
+    font-size: 0.9rem;
+  }
+
+  .btn-start-review {
+    padding: 0.85rem 2rem;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 280px;
+  }
 }

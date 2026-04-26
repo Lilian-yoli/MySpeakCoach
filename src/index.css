@@ -8,12 +8,22 @@
   --border-color: rgba(255, 255, 255, 0.1);
   --glass-bg: rgba(15, 23, 42, 0.6);
   --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* safe area for notch / home indicator */
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left,   0px);
+  --safe-right:  env(safe-area-inset-right,  0px);
+
+  /* navbar height used by sub-pages */
+  --navbar-h: 64px;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -23,9 +33,11 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   overflow-x: hidden;
-  background-image: 
+  background-image:
     radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+  /* smooth momentum scroll on iOS */
+  -webkit-overflow-scrolling: touch;
 }
 
 #root {
@@ -39,32 +51,24 @@ a {
   text-decoration: none;
   transition: all 0.2s ease;
 }
+a:hover { filter: brightness(1.2); }
 
-a:hover {
-  text-decoration: none;
-  filter: brightness(1.2);
-}
-
-/* Typography styles */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.2;
 }
+h1 { font-size: clamp(2rem, 6vw, 4.5rem); letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3vw, 3rem); }
 
-h1 {
-  font-size: clamp(2.5rem, 5vw, 4.5rem);
-  letter-spacing: -0.02em;
-}
-
-h2 {
-  font-size: clamp(2rem, 3vw, 3rem);
-}
-
-p {
-  color: var(--text-secondary);
-}
+p { color: var(--text-secondary); }
 
 button {
   cursor: pointer;
+  font-family: inherit;
+  /* minimum 44px touch target */
+  min-height: 44px;
+}
+
+input, textarea, select {
   font-family: inherit;
 }
