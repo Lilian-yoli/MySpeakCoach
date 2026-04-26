@@ -3,15 +3,19 @@ import './App.css';
 import { useSessionManager } from './hooks/useSessionManager';
 import { useAudioStreamer } from './hooks/useAudioStreamer';
 import { useAuth } from './hooks/useAuth';
+import { useLanguage } from './hooks/useLanguage';
 import { GeminiLiveClient } from './services/GeminiLiveClient';
 import ImmersiveOrb from './components/ImmersiveOrb';
 import RefinementDashboard from './components/RefinementDashboard';
 import ReviewSessionPage from './components/ReviewSessionPage';
 import CardManagerPage from './components/CardManagerPage';
 import AuthPage from './components/AuthPage';
+import LanguageSwitcher from './components/LanguageSwitcher';
+import { SUPPORTED_LANGUAGES } from './constants/languages';
 
 function App() {
   const { isLoggedIn, user, login, register, logout } = useAuth();
+  const { registeredLangs, activeLang, setActiveLang, addLanguage, removeLanguage } = useLanguage();
   const { isActive, transcript, startSession, endSession, addTranscript } = useSessionManager();
   const [currentView, setCurrentView] = useState('landing');
   const geminiClientRef = useRef(null);
@@ -19,48 +23,30 @@ function App() {
   const audioQueueRef = useRef(0);
 
   const handleAIAudioResponse = useCallback((base64PCM) => {
-    console.log('[App] 🔊 AI audio chunk received, length:', base64PCM.length);
-    if (!playbackCtxRef.current) {
-      console.warn('[App] No playback context!');
-      return;
-    }
-    
+    if (!playbackCtxRef.current) return;
     const binary = window.atob(base64PCM);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     const int16 = new Int16Array(bytes.buffer);
-    
     const audioCtx = playbackCtxRef.current;
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-    
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     const float32 = new Float32Array(int16.length);
     for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768.0;
-
     const audioBuffer = audioCtx.createBuffer(1, float32.length, 24000);
     audioBuffer.getChannelData(0).set(float32);
-    
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(audioCtx.destination);
-    
     const currentTime = audioCtx.currentTime;
-    if (audioQueueRef.current < currentTime) {
-      audioQueueRef.current = currentTime;
-    }
+    if (audioQueueRef.current < currentTime) audioQueueRef.current = currentTime;
     source.start(audioQueueRef.current);
     audioQueueRef.current += audioBuffer.duration;
   }, []);
 
-  const handleTurnComplete = useCallback(() => {
-    console.log('[App] AI turn complete');
-  }, []);
+  const handleTurnComplete = useCallback(() => {}, []);
 
   const handleAudioData = useCallback((base64PcmChunk) => {
-    if (geminiClientRef.current) {
-      geminiClientRef.current.sendAudio(base64PcmChunk);
-    }
+    if (geminiClientRef.current) geminiClientRef.current.sendAudio(base64PcmChunk);
   }, []);
 
   const { isRecording, volume, error, startRecording, stopRecording } = useAudioStreamer(handleAudioData);
@@ -69,22 +55,22 @@ function App() {
     setCurrentView('live-speak');
     startSession();
     await startRecording();
-    
+
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     geminiClientRef.current = new GeminiLiveClient(apiKey, handleAIAudioResponse, handleTurnComplete, addTranscript);
-    
+
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     playbackCtxRef.current = new AudioContextClass({ sampleRate: 24000 });
     audioQueueRef.current = playbackCtxRef.current.currentTime;
 
+    const langName = SUPPORTED_LANGUAGES[activeLang]?.name ?? 'English';
     try {
-      console.log('[App] Attempting Gemini connection...');
       await geminiClientRef.current.connect(
-        "You are an English role-play assistant. Keep your responses under 3 sentences. Be extremely concise. Focus on immersive back-and-forth conversation."
+        `You are a ${langName} role-play assistant. Keep your responses under 3 sentences. Be extremely concise. Focus on immersive back-and-forth conversation in ${langName}.`
       );
       addTranscript('sys', 'Connected to Gemini Live');
-      geminiClientRef.current.sendText("Hello! Please greet me briefly and ask what topic I want to role-play today.");
-    } catch(err) {
+      geminiClientRef.current.sendText(`Hello! Please greet me briefly in ${langName} and ask what topic I want to role-play today.`);
+    } catch (err) {
       console.error(err);
       addTranscript('sys', 'Failed to connect. Did you add VITE_GEMINI_API_KEY to .env.local?');
     }
@@ -101,19 +87,25 @@ function App() {
     setCurrentView('dashboard');
   };
 
-  const handleStartMemoryCards = () => {
-    setCurrentView('memory-cards');
-  };
+  const resetToLanding = () => setCurrentView('landing');
 
-  const handleOpenCardManager = () => {
-    setCurrentView('card-manager');
-  };
+  // Shared navbar for sub-pages
+  const SubNav = () => (
+    <nav className="navbar">
+      <div className="logo cursor-pointer" onClick={resetToLanding}>
+        <div className="logo-icon" />
+        MySpeak
+      </div>
+      <LanguageSwitcher
+        registeredLangs={registeredLangs}
+        activeLang={activeLang}
+        onSwitch={setActiveLang}
+        onAdd={addLanguage}
+        onRemove={removeLanguage}
+      />
+    </nav>
+  );
 
-  const resetToLanding = () => {
-    setCurrentView('landing');
-  };
-
-  // Rendering logic based on state
   if (!isLoggedIn) {
     return <AuthPage onLogin={login} onRegister={register} />;
   }
@@ -151,13 +143,8 @@ function App() {
   if (currentView === 'memory-cards') {
     return (
       <div className="app-container">
-        <nav className="navbar">
-          <div className="logo cursor-pointer" onClick={resetToLanding}>
-            <div className="logo-icon" />
-            MySpeak
-          </div>
-        </nav>
-        <ReviewSessionPage onBack={resetToLanding} />
+        <SubNav />
+        <ReviewSessionPage onBack={resetToLanding} activeLang={activeLang} />
       </div>
     );
   }
@@ -165,13 +152,8 @@ function App() {
   if (currentView === 'card-manager') {
     return (
       <div className="app-container">
-        <nav className="navbar">
-          <div className="logo cursor-pointer" onClick={resetToLanding}>
-            <div className="logo-icon" />
-            MySpeak
-          </div>
-        </nav>
-        <CardManagerPage onBack={resetToLanding} />
+        <SubNav />
+        <CardManagerPage onBack={resetToLanding} activeLang={activeLang} />
       </div>
     );
   }
@@ -183,13 +165,17 @@ function App() {
           <div className="logo-icon"></div>
           MySpeak
         </div>
-        <div className="nav-links">
-          <a href="#features" className="nav-link">Features</a>
-          <a href="#pricing" className="nav-link">Pricing</a>
-        </div>
-        <div className="auth-buttons" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <LanguageSwitcher
+            registeredLangs={registeredLangs}
+            activeLang={activeLang}
+            onSwitch={setActiveLang}
+            onAdd={addLanguage}
+            onRemove={removeLanguage}
+          />
+          <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)' }} />
           <span style={{ color: '#94a3b8', fontSize: '0.85em' }}>{user?.account}</span>
-          <button className="btn btn-ghost" onClick={logout}>登出</button>
+          <button className="btn btn-ghost" onClick={logout} style={{ fontSize: '0.85em' }}>登出</button>
         </div>
       </nav>
 
@@ -201,7 +187,7 @@ function App() {
         <p className="hero-desc">
           Choose your learning path. Deep immersion or targeted practice.
         </p>
-        
+
         <div className="hero-actions" style={{ display: 'flex', gap: '2rem', marginTop: '1rem' }}>
           <div className="feature-select-card" onClick={handleStartLiveSpeak}>
             <div className="feature-icon">🎙️</div>
@@ -209,15 +195,15 @@ function App() {
             <p>Real-time AI conversation practice</p>
             <button className="btn btn-primary">Start Speaking</button>
           </div>
-          
-          <div className="feature-select-card" onClick={handleStartMemoryCards}>
+
+          <div className="feature-select-card" onClick={() => setCurrentView('memory-cards')}>
             <div className="feature-icon">🎴</div>
             <h3>Memory Cards</h3>
             <p>Master vocabulary with AI smart cards</p>
             <button className="btn btn-outline">Explore Cards</button>
           </div>
 
-          <div className="feature-select-card" onClick={handleOpenCardManager}>
+          <div className="feature-select-card" onClick={() => setCurrentView('card-manager')}>
             <div className="feature-icon">🗂️</div>
             <h3>Card Library</h3>
             <p>View, edit, and manage your saved cards</p>

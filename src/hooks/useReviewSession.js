@@ -13,7 +13,7 @@ const sortByType = (cards) =>
  *  - track current card index & answer state
  *  - submit review completion and advance to the next card
  */
-export function useReviewSession() {
+export function useReviewSession(activeLang = 'en') {
   const [cards, setCards] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'active' | 'revealed' | 'submitting' | 'finished' | 'error'
@@ -24,7 +24,7 @@ export function useReviewSession() {
     setStatus('loading');
     setErrorMessage('');
     try {
-      const res = await fetch(`${API_BASE}/cards/due`, { headers: getAuthHeader() });
+      const res = await fetch(`${API_BASE}/cards/due?lang=${activeLang}`, { headers: getAuthHeader() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message || 'Failed to load cards');
 

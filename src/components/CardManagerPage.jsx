@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useCardManager } from '../hooks/useCardManager';
+import { SUPPORTED_LANGUAGES } from '../constants/languages';
 
 const TYPE_COLORS = {
   CLOZE:     { bg: '#1e3a5f', border: '#3b82f6', label: '克漏字' },
@@ -548,10 +549,11 @@ function AskAIForm({ onSuggest, onAdd }) {
   );
 }
 
-export default function CardManagerPage({ onBack }) {
-  const { groups, status, errorMessage, loadCards, deleteGroup, updateCard, addCards, suggestSentences, continueSentence } = useCardManager();
+export default function CardManagerPage({ onBack, activeLang = 'en' }) {
+  const { groups, status, errorMessage, loadCards, deleteGroup, updateCard, addCards, suggestSentences, continueSentence, moveGroupLanguage } = useCardManager(activeLang);
   const [expandedGroups, setExpandedGroups] = useState(new Set());
   const [deletingGroup, setDeletingGroup] = useState(null);
+  const [movingGroup, setMovingGroup] = useState(null);
 
   useEffect(() => { loadCards(); }, [loadCards]);
 
@@ -576,6 +578,15 @@ export default function CardManagerPage({ onBack }) {
       await deleteGroup(cards[0].id, originalText);
     } finally {
       setDeletingGroup(null);
+    }
+  };
+
+  const handleMoveGroup = async (originalText, targetLang) => {
+    setMovingGroup(originalText);
+    try {
+      await moveGroupLanguage(originalText, targetLang);
+    } finally {
+      setMovingGroup(null);
     }
   };
 
@@ -609,18 +620,47 @@ export default function CardManagerPage({ onBack }) {
       {status === 'ready' && groups.map(({ originalText, cards }) => {
         const isOpen = expandedGroups.has(originalText);
         const isDeleting = deletingGroup === originalText;
+        const isMoving = movingGroup === originalText;
+        const otherLangs = Object.keys(SUPPORTED_LANGUAGES).filter(c => c !== activeLang);
+
         return (
           <div key={originalText} style={{ marginBottom: '1rem', background: 'rgba(30, 41, 59, 0.8)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.25rem', gap: '0.5rem' }}>
               <button
                 onClick={() => toggleGroup(originalText)}
-                style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left', padding: 0 }}
+                style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left', padding: 0, minWidth: 0 }}
               >
-                <span style={{ color: '#f1f5f9', fontWeight: 500 }}>{originalText}</span>
-                <span style={{ color: '#64748b', fontSize: '0.85em', marginRight: '1rem' }}>
+                <span style={{ color: '#f1f5f9', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{originalText}</span>
+                <span style={{ color: '#64748b', fontSize: '0.85em', marginRight: '0.5rem', flexShrink: 0 }}>
                   {cards.length} 張 {isOpen ? '▲' : '▼'}
                 </span>
               </button>
+
+              {/* Move to language */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <select
+                  value=""
+                  disabled={isMoving}
+                  onChange={e => e.target.value && handleMoveGroup(originalText, e.target.value)}
+                  style={{
+                    background: 'rgba(0,0,0,0.3)',
+                    color: isMoving ? '#475569' : '#94a3b8',
+                    border: '1px solid #334155',
+                    borderRadius: '6px',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.78em',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="">{isMoving ? '移動中…' : '移至語言'}</option>
+                  {otherLangs.map(c => (
+                    <option key={c} value={c}>
+                      {SUPPORTED_LANGUAGES[c].flag} {SUPPORTED_LANGUAGES[c].label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <button
                 onClick={() => handleDeleteGroup(cards, originalText)}
                 disabled={isDeleting}

@@ -9,17 +9,26 @@ const TYPE_META = {
   CONTEXT:   { label: '情境作答',  emoji: '🌐', badgeClass: 'badge-context',   hint: '閱讀情境敘述後作答' },
 };
 
-/** 決定要朗讀哪段英文：CLOZE 唸完整原句，其餘唸 answer（英文句子） */
-function getEnglishText(card) {
+const LANG_LOCALE = {
+  en: 'en-US',
+  ja: 'ja-JP',
+  fr: 'fr-FR',
+  ko: 'ko-KR',
+  es: 'es-ES',
+  de: 'de-DE',
+};
+
+/** CLOZE 唸完整原句，其餘唸 answer（目標語言句子） */
+function getTargetText(card) {
   return card.cardType === 'CLOZE' ? card.originalText : card.answer;
 }
 
-function speakEnglish(card) {
+function speakCard(card, lang = 'en') {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(getEnglishText(card));
-  utter.lang = 'en-US';
-  utter.rate = 0.9;
+  const utter = new SpeechSynthesisUtterance(getTargetText(card));
+  utter.lang = LANG_LOCALE[lang] ?? 'en-US';
+  utter.rate = lang === 'ja' || lang === 'ko' ? 0.8 : 0.9;
   window.speechSynthesis.speak(utter);
 }
 
@@ -63,7 +72,7 @@ function StageDots({ stage }) {
 }
 
 /* ─── Main component ───────────────────────────────────────────────────── */
-export default function ReviewSessionPage({ onBack }) {
+export default function ReviewSessionPage({ onBack, activeLang = 'en' }) {
   const {
     currentCard,
     currentIndex,
@@ -74,7 +83,7 @@ export default function ReviewSessionPage({ onBack }) {
     startSession,
     revealAnswer,
     markReviewed,
-  } = useReviewSession();
+  } = useReviewSession(activeLang);
 
   const [userInput, setUserInput]     = useState('');
   const [checkResult, setCheckResult] = useState(null); // null | 'correct' | 'incorrect'
@@ -186,9 +195,9 @@ export default function ReviewSessionPage({ onBack }) {
           <QuestionText cardType={currentCard.cardType} question={currentCard.question} />
           <button
             className="btn-tts"
-            onClick={() => speakEnglish(currentCard)}
-            title="朗讀英文句子"
-            aria-label="朗讀英文"
+            onClick={() => speakCard(currentCard, activeLang)}
+            title="朗讀句子"
+            aria-label="朗讀句子"
           >
             🔊
           </button>

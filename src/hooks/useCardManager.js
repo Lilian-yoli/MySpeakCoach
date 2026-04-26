@@ -12,7 +12,7 @@ function groupByOriginalText(cards) {
   return Array.from(map.entries()).map(([originalText, cards]) => ({ originalText, cards }));
 }
 
-export function useCardManager() {
+export function useCardManager(activeLang = 'en') {
   const [groups, setGroups] = useState([]);
   const [status, setStatus] = useState('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -21,7 +21,7 @@ export function useCardManager() {
     setStatus('loading');
     setErrorMessage('');
     try {
-      const res = await fetch(`${API_BASE}/cards`, { headers: getAuthHeader() });
+      const res = await fetch(`${API_BASE}/cards?lang=${activeLang}`, { headers: getAuthHeader() });
       const json = await res.json();
       if (!json.success) throw new Error(json.message || 'Failed to load cards');
       setGroups(groupByOriginalText(json.data));
@@ -30,7 +30,7 @@ export function useCardManager() {
       setErrorMessage(err.message);
       setStatus('error');
     }
-  }, []);
+  }, [activeLang]);
 
   const deleteGroup = useCallback(async (anyCardId, originalText) => {
     const res = await fetch(`${API_BASE}/cards/${anyCardId}`, {
@@ -63,34 +63,45 @@ export function useCardManager() {
     const res = await fetch(`${API_BASE}/cards/batch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ inputs: sentences }),
+      body: JSON.stringify({ inputs: sentences, language: activeLang }),
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.message || 'Failed to create cards');
     return json.data;
-  }, []);
+  }, [activeLang]);
 
   const suggestSentences = useCallback(async (query) => {
     const res = await fetch(`${API_BASE}/cards/suggest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, language: activeLang }),
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.message || 'Failed to get suggestions');
     return json.suggestions;
-  }, []);
+  }, [activeLang]);
 
   const continueSentence = useCallback(async (sentence) => {
     const res = await fetch(`${API_BASE}/cards/continue`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ sentence }),
+      body: JSON.stringify({ sentence, language: activeLang }),
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.message || 'Failed to get continuations');
     return json.continuations;
+  }, [activeLang]);
+
+  const moveGroupLanguage = useCallback(async (originalText, language) => {
+    const res = await fetch(`${API_BASE}/cards/group-language`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ originalText, language }),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.message || 'Failed to move group');
+    setGroups(prev => prev.filter(g => g.originalText !== originalText));
   }, []);
 
-  return { groups, status, errorMessage, loadCards, deleteGroup, updateCard, addCards, suggestSentences, continueSentence };
+  return { groups, status, errorMessage, loadCards, deleteGroup, updateCard, addCards, suggestSentences, continueSentence, moveGroupLanguage };
 }
