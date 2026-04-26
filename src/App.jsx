@@ -134,8 +134,14 @@ function App() {
 
   if (currentView === 'dashboard') {
     return (
-      <div className="app-container" style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <RefinementDashboard transcript={transcript} onRestart={handleStartLiveSpeak} />
+      <div className="app-container">
+        <RefinementDashboard
+          transcript={transcript}
+          activeLang={activeLang}
+          onRestart={handleStartLiveSpeak}
+          onBack={resetToLanding}
+          onManageCards={() => setCurrentView('card-manager')}
+        />
       </div>
     );
   }
