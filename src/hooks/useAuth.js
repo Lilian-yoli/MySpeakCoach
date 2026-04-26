@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config.js';
 const TOKEN_KEY = 'myspeak_token';
 const USER_KEY  = 'myspeak_user';
 

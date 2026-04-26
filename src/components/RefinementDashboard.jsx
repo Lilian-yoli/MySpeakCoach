@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { getAuthHeader } from '../hooks/useAuth';
 import './RefinementDashboard.css';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config.js';
 
 export default function RefinementDashboard({ transcript, activeLang = 'en', onRestart, onBack, onManageCards }) {
   const [status, setStatus] = useState('confirm'); // 'confirm' | 'loading' | 'done' | 'error'

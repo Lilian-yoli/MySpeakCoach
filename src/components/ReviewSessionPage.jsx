@@ -135,7 +135,7 @@ export default function ReviewSessionPage({ onBack, activeLang = 'en' }) {
           <div className="big-icon">⚠️</div>
           <h2>連線失敗</h2>
           <p className="review-error-msg">{errorMessage}</p>
-          <p>請確認後端伺服器是否正在 <code>localhost:3001</code> 執行。</p>
+          <p>請確認後端伺服器是否正常運作。</p>
           <button id="retry-btn" className="btn-start-review" onClick={startSession}>重試</button>
           <button className="review-close-btn" style={{ marginTop: '0.5rem' }} onClick={onBack}>返回首頁</button>
         </div>

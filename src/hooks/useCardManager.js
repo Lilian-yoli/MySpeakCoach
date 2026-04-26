@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getAuthHeader } from './useAuth';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config.js';
 
 function groupByOriginalText(cards) {
   const map = new Map();

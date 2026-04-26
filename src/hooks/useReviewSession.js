@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getAuthHeader } from './useAuth';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config.js';
 
 const TYPE_ORDER = { CLOZE: 0, L1_PROMPT: 1, CONTEXT: 2 };
 const sortByType = (cards) =>

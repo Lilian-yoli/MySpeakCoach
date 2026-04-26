@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { getAuthHeader } from './useAuth';
-
-const API_BASE = 'http://localhost:3001/api';
+import { API_BASE } from '../config.js';
 const STORAGE_KEY = 'myspeak_lang';
 
 export function useLanguage() {
