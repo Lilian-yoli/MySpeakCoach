@@ -6,6 +6,7 @@ import { GeminiLiveClient } from './services/GeminiLiveClient';
 import ImmersiveOrb from './components/ImmersiveOrb';
 import RefinementDashboard from './components/RefinementDashboard';
 import ReviewSessionPage from './components/ReviewSessionPage';
+import CardManagerPage from './components/CardManagerPage';
 
 function App() {
   const { isActive, transcript, startSession, endSession, addTranscript } = useSessionManager();
@@ -67,7 +68,7 @@ function App() {
     await startRecording();
     
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    geminiClientRef.current = new GeminiLiveClient(apiKey, handleAIAudioResponse, handleTurnComplete);
+    geminiClientRef.current = new GeminiLiveClient(apiKey, handleAIAudioResponse, handleTurnComplete, addTranscript);
     
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     playbackCtxRef.current = new AudioContextClass({ sampleRate: 24000 });
@@ -99,6 +100,10 @@ function App() {
 
   const handleStartMemoryCards = () => {
     setCurrentView('memory-cards');
+  };
+
+  const handleOpenCardManager = () => {
+    setCurrentView('card-manager');
   };
 
   const resetToLanding = () => {
@@ -150,6 +155,20 @@ function App() {
     );
   }
 
+  if (currentView === 'card-manager') {
+    return (
+      <div className="app-container">
+        <nav className="navbar">
+          <div className="logo cursor-pointer" onClick={resetToLanding}>
+            <div className="logo-icon" />
+            MySpeak
+          </div>
+        </nav>
+        <CardManagerPage onBack={resetToLanding} />
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <nav className="navbar">
@@ -189,6 +208,13 @@ function App() {
             <h3>Memory Cards</h3>
             <p>Master vocabulary with AI smart cards</p>
             <button className="btn btn-outline">Explore Cards</button>
+          </div>
+
+          <div className="feature-select-card" onClick={handleOpenCardManager}>
+            <div className="feature-icon">🗂️</div>
+            <h3>Card Library</h3>
+            <p>View, edit, and manage your saved cards</p>
+            <button className="btn btn-outline">Manage Cards</button>
           </div>
         </div>
       </main>

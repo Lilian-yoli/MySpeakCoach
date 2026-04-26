@@ -40,6 +40,100 @@ export const getDueCards = async (req, res) => {
     }
 };
 
+export const listCards = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const cards = await cardsService.fetchAllCards(userId);
+        return res.status(200).json({ success: true, data: cards });
+    } catch (error) {
+        console.error("List Cards Error:", error);
+        return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    }
+};
+
+export const deleteCard = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const cardId = parseInt(req.params.id, 10);
+        if (isNaN(cardId)) return res.status(400).json({ success: false, message: 'Invalid card ID' });
+
+        await cardsService.deleteCardGroup(cardId, userId);
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("Delete Card Error:", error);
+        const statusCode = (error.message === 'Card not found' || error.message === 'Unauthorized') ? 403 : 500;
+        return res.status(statusCode).json({ success: false, message: error.message });
+    }
+};
+
+export const editCard = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const cardId = parseInt(req.params.id, 10);
+        if (isNaN(cardId)) return res.status(400).json({ success: false, message: 'Invalid card ID' });
+
+        const { question, answer } = req.body;
+        if (!question || !answer) return res.status(400).json({ success: false, message: 'question and answer are required' });
+
+        const updated = await cardsService.updateCard(cardId, question, answer, userId);
+        return res.status(200).json({ success: true, card: updated });
+    } catch (error) {
+        console.error("Edit Card Error:", error);
+        const statusCode = (error.message === 'Card not found' || error.message === 'Unauthorized') ? 403 : 500;
+        return res.status(statusCode).json({ success: false, message: error.message });
+    }
+};
+
+export const refineAndCreateCards = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const { utterances } = req.body;
+
+        if (!utterances || !Array.isArray(utterances) || utterances.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid or empty utterances array' });
+        }
+
+        const result = await cardsService.processLiveRefinement(utterances, userId);
+
+        return res.status(200).json({
+            success: true,
+            pairs: result.pairs,
+            cardsCreated: result.savedCards.length,
+        });
+    } catch (error) {
+        console.error("Refine Cards Error:", error);
+        return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    }
+};
+
+export const continueSentence = async (req, res) => {
+    try {
+        const { sentence } = req.body;
+        if (!sentence || !sentence.trim()) {
+            return res.status(400).json({ success: false, message: 'sentence is required' });
+        }
+        const continuations = await cardsService.generateContinuations(sentence.trim());
+        return res.status(200).json({ success: true, continuations });
+    } catch (error) {
+        console.error("Continue Sentence Error:", error);
+        return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    }
+};
+
+export const suggestSentences = async (req, res) => {
+    try {
+        const { query } = req.body;
+        if (!query || !query.trim()) {
+            return res.status(400).json({ success: false, message: 'query is required' });
+        }
+        const suggestions = await cardsService.generateSentenceSuggestions(query.trim());
+        return res.status(200).json({ success: true, suggestions });
+    } catch (error) {
+        console.error("Suggest Sentences Error:", error);
+        return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    }
+};
+
 export const reviewCard = async (req, res) => {
     try {
         const userId = req.user?.id;

@@ -2,6 +2,10 @@ import { useState, useCallback } from 'react';
 
 const API_BASE = 'http://localhost:3001/api';
 
+const TYPE_ORDER = { CLOZE: 0, L1_PROMPT: 1, CONTEXT: 2 };
+const sortByType = (cards) =>
+  [...cards].sort((a, b) => (TYPE_ORDER[a.cardType] ?? 3) - (TYPE_ORDER[b.cardType] ?? 3));
+
 /**
  * Hook that manages the SRS review session lifecycle:
  *  - fetch due cards from the backend
@@ -29,7 +33,7 @@ export function useReviewSession() {
         return;
       }
 
-      setCards(json.data);
+      setCards(sortByType(json.data));
       setCurrentIndex(0);
       setStatus('active');
     } catch (err) {

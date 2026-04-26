@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:3001/api/cards/due)",
+      "Bash(npx vite *)",
+      "Bash(curl -s \"http://localhost:3001/api/cards/due\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('Cards count:', len\\(d['data']\\)\\); print\\('First card status:', d['success']\\)\")"
+    ]
+  }
+}

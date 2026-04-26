@@ -43,3 +43,23 @@ export const updateReviewSchedule = async (id, reviewStage, nextReviewDate) => {
         }
     });
 };
+
+export const findAllCardsByUserId = async (userId) => {
+    return await prisma.card.findMany({
+        where: { userId },
+        orderBy: [{ createdAt: 'desc' }, { cardType: 'asc' }]
+    });
+};
+
+export const deleteCardsByOriginalText = async (originalText, userId) => {
+    return await prisma.card.deleteMany({
+        where: { originalText, userId }
+    });
+};
+
+export const updateCardContent = async (id, question, answer) => {
+    return await prisma.card.update({
+        where: { id },
+        data: { question, answer }
+    });
+};

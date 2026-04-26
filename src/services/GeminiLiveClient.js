@@ -1,9 +1,10 @@
 export class GeminiLiveClient {
-  constructor(apiKey, onAudioChunk, onTurnComplete) {
+  constructor(apiKey, onAudioChunk, onTurnComplete, onTranscript) {
     this.apiKey = apiKey;
     this.socket = null;
     this.onAudioChunk = onAudioChunk;   // (base64Audio) => void
     this.onTurnComplete = onTurnComplete; // () => void
+    this.onTranscript = onTranscript;   // (role: 'user'|'ai', text: string) => void
     this.isSetupComplete = false;
   }
 
@@ -82,10 +83,14 @@ export class GeminiLiveClient {
 
         // 3) Transcription data
         if (msg.serverContent && msg.serverContent.inputTranscription) {
-          console.log("[Gemini] 🎤 User said:", msg.serverContent.inputTranscription.text);
+          const text = msg.serverContent.inputTranscription.text;
+          console.log("[Gemini] 🎤 User said:", text);
+          if (this.onTranscript && text?.trim()) this.onTranscript('user', text.trim());
         }
         if (msg.serverContent && msg.serverContent.outputTranscription) {
-          console.log("[Gemini] 🤖 AI said:", msg.serverContent.outputTranscription.text);
+          const text = msg.serverContent.outputTranscription.text;
+          console.log("[Gemini] 🤖 AI said:", text);
+          if (this.onTranscript && text?.trim()) this.onTranscript('ai', text.trim());
         }
 
         // 4) Turn complete

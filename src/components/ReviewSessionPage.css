@@ -163,11 +163,98 @@
   line-height: 1.55;
 }
 
+/* ─── Question row (question + TTS button) ───────────────────────────── */
+.question-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.question-row .card-question {
+  flex: 1;
+  margin-bottom: 0;
+}
+.btn-tts {
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  line-height: 1;
+}
+.btn-tts:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* ─── Answer input area ──────────────────────────────────────────────── */
+.answer-input-area {
+  margin-top: 1.75rem;
+}
+.answer-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  margin-bottom: 0.5rem;
+}
+.answer-input:focus {
+  border-color: var(--accent-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+.answer-input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* ─── Result badge ───────────────────────────────────────────────────── */
+.result-badge {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  animation: revealDown 0.25s ease both;
+}
+.result-correct {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+.result-incorrect {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+/* ─── Skip button ────────────────────────────────────────────────────── */
+.btn-skip {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+.btn-skip:hover {
+  color: var(--text-primary);
+}
+
 /* ─── Action buttons ─────────────────────────────────────────────────── */
 .card-actions {
   display: flex;
+  align-items: center;
   gap: 1rem;
-  margin-top: 2.5rem;
+  margin-top: 1.25rem;
 }
 
 .btn-reveal {

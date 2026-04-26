@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useReviewSession } from '../hooks/useReviewSession';
 import './ReviewSessionPage.css';
 
@@ -9,7 +9,29 @@ const TYPE_META = {
   CONTEXT:   { label: '情境作答',  emoji: '🌐', badgeClass: 'badge-context',   hint: '閱讀情境敘述後作答' },
 };
 
-/** Render the question text — for CLOZE, style the blank */
+/** 決定要朗讀哪段英文：CLOZE 唸完整原句，其餘唸 answer（英文句子） */
+function getEnglishText(card) {
+  return card.cardType === 'CLOZE' ? card.originalText : card.answer;
+}
+
+function speakEnglish(card) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(getEnglishText(card));
+  utter.lang = 'en-US';
+  utter.rate = 0.9;
+  window.speechSynthesis.speak(utter);
+}
+
+/** 比較答案：去頭尾空白、不分大小寫、忽略標點 */
+function normalise(str) {
+  return str.trim().toLowerCase().replace(/[.,!?'"]/g, '');
+}
+function isCorrect(userInput, correctAnswer) {
+  return normalise(userInput) === normalise(correctAnswer);
+}
+
+/** Render question text — for CLOZE, style the blank */
 function QuestionText({ cardType, question }) {
   if (cardType === 'CLOZE') {
     const parts = question.split('___');
@@ -52,13 +74,35 @@ export default function ReviewSessionPage({ onBack }) {
     startSession,
     revealAnswer,
     markReviewed,
-    resetSession,
   } = useReviewSession();
 
-  /* Auto-fetch when the page mounts */
+  const [userInput, setUserInput]     = useState('');
+  const [checkResult, setCheckResult] = useState(null); // null | 'correct' | 'incorrect'
+
+  /* Kick off the session on mount */
   useEffect(() => {
     startSession();
   }, [startSession]);
+
+  /* Reset input state whenever the card changes */
+  useEffect(() => {
+    setUserInput('');
+    setCheckResult(null);
+  }, [currentCard?.id]);
+
+  const handleCheck = useCallback(() => {
+    if (!currentCard || !userInput.trim()) return;
+    const result = isCorrect(userInput, currentCard.answer) ? 'correct' : 'incorrect';
+    setCheckResult(result);
+    revealAnswer();
+  }, [currentCard, userInput, revealAnswer]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleCheck();
+    }
+  }, [handleCheck]);
 
   /* ── Idle / Loading ── */
   if (status === 'idle' || status === 'loading') {
@@ -83,20 +127,8 @@ export default function ReviewSessionPage({ onBack }) {
           <h2>連線失敗</h2>
           <p className="review-error-msg">{errorMessage}</p>
           <p>請確認後端伺服器是否正在 <code>localhost:3001</code> 執行。</p>
-          <button
-            id="retry-btn"
-            className="btn-start-review"
-            onClick={startSession}
-          >
-            重試
-          </button>
-          <button
-            className="review-close-btn"
-            style={{ marginTop: '0.5rem' }}
-            onClick={onBack}
-          >
-            返回首頁
-          </button>
+          <button id="retry-btn" className="btn-start-review" onClick={startSession}>重試</button>
+          <button className="review-close-btn" style={{ marginTop: '0.5rem' }} onClick={onBack}>返回首頁</button>
         </div>
       </div>
     );
@@ -115,23 +147,16 @@ export default function ReviewSessionPage({ onBack }) {
               ? `已完成 ${totalCards} 張卡片的複習。下次排程已依費氏數列自動計算。`
               : '今天沒有待複習的卡片，明天再來看看！'}
           </p>
-          <button
-            id="finish-back-btn"
-            className="btn-start-review"
-            onClick={onBack}
-          >
-            返回首頁
-          </button>
+          <button id="finish-back-btn" className="btn-start-review" onClick={onBack}>返回首頁</button>
         </div>
       </div>
     );
   }
 
-  /* ── Active / Revealed / Submitting ── */
   if (!currentCard) return null;
 
-  const meta = TYPE_META[currentCard.cardType] ?? TYPE_META.CONTEXT;
-  const isRevealed = status === 'revealed';
+  const meta        = TYPE_META[currentCard.cardType] ?? TYPE_META.CONTEXT;
+  const isRevealed  = status === 'revealed';
   const isSubmitting = status === 'submitting';
 
   return (
@@ -144,12 +169,8 @@ export default function ReviewSessionPage({ onBack }) {
       </div>
 
       {/* Card */}
-      <div
-        className="review-card"
-        data-type={currentCard.cardType}
-        /* key forces re-mount (re-animation) on card change */
-        key={currentCard.id}
-      >
+      <div className="review-card" data-type={currentCard.cardType} key={currentCard.id}>
+
         {/* Badge */}
         <div className={`card-type-badge ${meta.badgeClass}`}>
           {meta.emoji} {meta.label}
@@ -160,41 +181,79 @@ export default function ReviewSessionPage({ onBack }) {
           {meta.hint}
         </p>
 
-        {/* Question */}
-        <QuestionText cardType={currentCard.cardType} question={currentCard.question} />
+        {/* Question + TTS button */}
+        <div className="question-row">
+          <QuestionText cardType={currentCard.cardType} question={currentCard.question} />
+          <button
+            className="btn-tts"
+            onClick={() => speakEnglish(currentCard)}
+            title="朗讀英文句子"
+            aria-label="朗讀英文"
+          >
+            🔊
+          </button>
+        </div>
 
-        {/* Divider + Answer (conditionally shown) */}
+        {/* Answer input area (before reveal) */}
+        {!isRevealed && (
+          <div className="answer-input-area">
+            <input
+              className="answer-input"
+              type="text"
+              placeholder="輸入你的答案…"
+              value={userInput}
+              onChange={e => setUserInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+            />
+            <div className="card-actions">
+              <button
+                id="check-answer-btn"
+                className="btn-reveal"
+                onClick={handleCheck}
+                disabled={!userInput.trim()}
+              >
+                確認答案
+              </button>
+              <button
+                className="btn-skip"
+                onClick={revealAnswer}
+              >
+                直接顯示答案
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Revealed: feedback + correct answer */}
         {isRevealed && (
           <>
             <div className="card-divider" />
+
+            {/* Feedback badge (only when user submitted an answer) */}
+            {checkResult && (
+              <div className={`result-badge ${checkResult === 'correct' ? 'result-correct' : 'result-incorrect'}`}>
+                {checkResult === 'correct' ? '✓ 答對了！' : `✗ 答錯了　你的答案：${userInput}`}
+              </div>
+            )}
+
             <div className="card-answer-wrap">
-              <p className="card-answer-label">答案</p>
+              <p className="card-answer-label">正確答案</p>
               <p className="card-answer-text">{currentCard.answer}</p>
+            </div>
+
+            <div className="card-actions">
+              <button
+                id="got-it-btn"
+                className="btn-got-it"
+                onClick={markReviewed}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? '記錄中…' : '下一張 →'}
+              </button>
             </div>
           </>
         )}
-
-        {/* Actions */}
-        <div className="card-actions">
-          {!isRevealed ? (
-            <button
-              id="reveal-answer-btn"
-              className="btn-reveal"
-              onClick={revealAnswer}
-            >
-              顯示答案
-            </button>
-          ) : (
-            <button
-              id="got-it-btn"
-              className="btn-got-it"
-              onClick={markReviewed}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? '記錄中…' : '👍 已記住，下一張'}
-            </button>
-          )}
-        </div>
 
         {/* Stage dots */}
         <StageDots stage={currentCard.reviewStage} />
@@ -207,9 +266,7 @@ export default function ReviewSessionPage({ onBack }) {
 function Topbar({ onBack, label }) {
   return (
     <div className="review-topbar">
-      <button id="review-back-btn" className="review-close-btn" onClick={onBack}>
-        ← 返回
-      </button>
+      <button id="review-back-btn" className="review-close-btn" onClick={onBack}>← 返回</button>
       {label && <span className="review-counter">{label}</span>}
       <div style={{ width: 64 }} />
     </div>
