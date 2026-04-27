@@ -20,11 +20,25 @@ const __dirname = path.dirname(__filename);
 export const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: true,
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowed = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+      : [];
+    // Allow requests with no origin (mobile, curl, etc.) or matching origin
+    if (!origin || allowed.length === 0 || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
   allowedHeaders: ['Content-Type', 'Authorization'],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-}));
+  credentials: true,
+};
+
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/api/health', healthRoute);
