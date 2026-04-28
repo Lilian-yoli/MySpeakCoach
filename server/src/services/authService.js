@@ -6,6 +6,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 const JWT_EXPIRES_IN = '7d';
 
 export const register = async (account, password) => {
+    const allowedAccounts = process.env.ALLOWED_ACCOUNTS
+        ? process.env.ALLOWED_ACCOUNTS.split(',').map(a => a.trim())
+        : null;
+    if (allowedAccounts && !allowedAccounts.includes(account)) {
+        throw new Error('Registration not allowed');
+    }
+
     const existing = await userRepository.findByAccount(account);
     if (existing) throw new Error('Account already exists');
 

@@ -3,6 +3,7 @@ import * as userRepository from '../repositories/userRepository.js';
 import * as cardsRepository from '../repositories/cardsRepository.js';
 import { getFibonacciInterval } from '../utils/srs.js';
 import { getLangName } from '../utils/languages.js';
+import { logger } from '../utils/logger.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -47,6 +48,8 @@ ${JSON.stringify(inputs)}`;
         }
     };
 
+    logger.info('AI', 'processBatchTranslation call', { userId, inputCount: inputs.length, language });
+    const aiStart = Date.now();
     const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
@@ -55,6 +58,7 @@ ${JSON.stringify(inputs)}`;
             temperature: 0.4,
         }
     });
+    logger.info('AI', 'processBatchTranslation done', { userId, durationMs: Date.now() - aiStart });
 
     const generated = JSON.parse(result.response.text());
 
@@ -71,6 +75,7 @@ ${JSON.stringify(inputs)}`;
 
     await cardsRepository.createManyCards(dataToInsert);
     const savedCards = await cardsRepository.findRecentCardsByUserId(userId, dataToInsert.length);
+    logger.debug('AI', 'Cards inserted to DB', { userId, count: savedCards.length });
     return savedCards;
 };
 
@@ -151,6 +156,8 @@ ${JSON.stringify(utterances)}`;
         }
     };
 
+    logger.info('AI', 'processLiveRefinement call', { userId, inputCount: utterances.length, language });
+    const aiStart = Date.now();
     const refinementResult = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: refinementPrompt }] }],
         generationConfig: {
@@ -159,6 +166,7 @@ ${JSON.stringify(utterances)}`;
             temperature: 0.3,
         }
     });
+    logger.info('AI', 'processLiveRefinement done', { userId, durationMs: Date.now() - aiStart });
 
     const pairs = JSON.parse(refinementResult.response.text());
 
@@ -176,6 +184,7 @@ ${JSON.stringify(utterances)}`;
 
 export const generateContinuations = async (sentence, language = 'en') => {
     const langName = getLangName(language);
+    logger.info('AI', 'generateContinuations call', { language });
 
     const prompt = `You are a helpful ${langName} conversation coach.
 The user provides a ${langName} sentence. Suggest 5 natural, native-sounding ways to continue or respond to it in a real conversation.
@@ -193,6 +202,7 @@ Input sentence: "${sentence}"`;
         items: { type: SchemaType.STRING, description: `A natural ${langName} continuation or response` }
     };
 
+    const aiStart = Date.now();
     const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
@@ -201,12 +211,14 @@ Input sentence: "${sentence}"`;
             temperature: 0.8,
         }
     });
+    logger.info('AI', 'generateContinuations done', { language, durationMs: Date.now() - aiStart });
 
     return JSON.parse(result.response.text());
 };
 
 export const generateSentenceSuggestions = async (query, language = 'en') => {
     const langName = getLangName(language);
+    logger.info('AI', 'generateSentenceSuggestions call', { language });
 
     const prompt = `You are a helpful ${langName} language learning assistant.
 The user will describe in Chinese what they want to express in ${langName}.
@@ -220,6 +232,7 @@ User's request (in Chinese): ${query}`;
         items: { type: SchemaType.STRING, description: `A natural ${langName} sentence suggestion` }
     };
 
+    const aiStart = Date.now();
     const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
@@ -228,6 +241,7 @@ User's request (in Chinese): ${query}`;
             temperature: 0.7,
         }
     });
+    logger.info('AI', 'generateSentenceSuggestions done', { language, durationMs: Date.now() - aiStart });
 
     return JSON.parse(result.response.text());
 };
