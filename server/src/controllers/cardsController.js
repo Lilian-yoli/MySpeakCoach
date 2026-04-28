@@ -8,6 +8,12 @@ export const createBatchCards = async (req, res) => {
         if (!inputs || !Array.isArray(inputs) || inputs.length === 0) {
             return res.status(400).json({ success: false, message: 'Invalid or empty inputs array' });
         }
+        if (inputs.length > 10) {
+            return res.status(400).json({ success: false, message: 'inputs must contain 1–10 items per request.' });
+        }
+        if (inputs.some(s => typeof s !== 'string' || s.trim().length === 0 || s.length > 500)) {
+            return res.status(400).json({ success: false, message: 'Each input must be a non-empty string under 500 characters.' });
+        }
         const savedCards = await cardsService.processBatchTranslation(inputs, req.user?.id, language || 'en');
         return res.status(200).json({ success: true, count: savedCards.length, data: savedCards });
     } catch (error) {
@@ -70,6 +76,12 @@ export const refineAndCreateCards = async (req, res) => {
         if (!utterances || !Array.isArray(utterances) || utterances.length === 0) {
             return res.status(400).json({ success: false, message: 'Invalid or empty utterances array' });
         }
+        if (utterances.length > 20) {
+            return res.status(400).json({ success: false, message: 'utterances must contain 1–20 items per request.' });
+        }
+        if (utterances.some(s => typeof s !== 'string' || s.trim().length === 0 || s.length > 1000)) {
+            return res.status(400).json({ success: false, message: 'Each utterance must be a non-empty string under 1000 characters.' });
+        }
         const result = await cardsService.processLiveRefinement(utterances, req.user?.id, language || 'en');
         return res.status(200).json({ success: true, pairs: result.pairs, cardsCreated: result.savedCards.length });
     } catch (error) {
@@ -84,6 +96,9 @@ export const suggestSentences = async (req, res) => {
         if (!query || !query.trim()) {
             return res.status(400).json({ success: false, message: 'query is required' });
         }
+        if (query.length > 200) {
+            return res.status(400).json({ success: false, message: 'query must be under 200 characters.' });
+        }
         const suggestions = await cardsService.generateSentenceSuggestions(query.trim(), language || 'en');
         return res.status(200).json({ success: true, suggestions });
     } catch (error) {
@@ -97,6 +112,9 @@ export const continueSentence = async (req, res) => {
         const { sentence, language } = req.body;
         if (!sentence || !sentence.trim()) {
             return res.status(400).json({ success: false, message: 'sentence is required' });
+        }
+        if (sentence.length > 500) {
+            return res.status(400).json({ success: false, message: 'sentence must be under 500 characters.' });
         }
         const continuations = await cardsService.generateContinuations(sentence.trim(), language || 'en');
         return res.status(200).json({ success: true, continuations });

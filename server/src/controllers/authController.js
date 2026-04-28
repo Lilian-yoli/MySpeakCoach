@@ -9,7 +9,9 @@ export const register = async (req, res) => {
         const result = await authService.register(account.trim(), password);
         return res.status(201).json({ success: true, ...result });
     } catch (error) {
-        const status = error.message === 'Account already exists' ? 409 : 500;
+        const status = error.message === 'Account already exists' ? 409
+                     : error.message === 'Registration not allowed' ? 403
+                     : 500;
         return res.status(status).json({ success: false, message: error.message });
     }
 };

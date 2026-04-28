@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -37,11 +38,43 @@ const corsOptions = {
   credentials: true,
 };
 
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'AI request limit reached, please wait.' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many auth attempts, please try again later.' },
+});
+
+app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '50kb' }));
+
+app.use('/api', generalLimiter);
+app.use('/api/auth', authLimiter);
 
 app.use('/api/health', healthRoute);
 app.use('/api/auth', authRoute);
+app.use('/api/cards/batch', aiLimiter);
+app.use('/api/cards/refine', aiLimiter);
+app.use('/api/cards/suggest', aiLimiter);
+app.use('/api/cards/continue', aiLimiter);
 app.use('/api/cards', authenticate, cardsRoute);
 app.use('/api/languages', authenticate, languagesRoute);
 

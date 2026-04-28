@@ -21,7 +21,7 @@ model User {
 model UserLanguage {
   id        Int      @id @default(autoincrement())
   userId    Int
-  language  String   // e.g. "en", "ja", "fr", "ko", "es"
+  language  String // e.g. "en", "ja", "fr", "ko", "es"
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
