@@ -99,6 +99,47 @@ export const refineAndCreateCards = async (req, res) => {
     }
 };
 
+export const previewRefinement = async (req, res) => {
+    try {
+        const { utterances, language } = req.body;
+        if (!utterances || !Array.isArray(utterances) || utterances.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid or empty utterances array' });
+        }
+        if (utterances.length > 20) {
+            return res.status(400).json({ success: false, message: 'utterances must contain 1–20 items per request.' });
+        }
+        if (utterances.some(s => typeof s !== 'string' || s.trim().length === 0 || s.length > 1000)) {
+            return res.status(400).json({ success: false, message: 'Each utterance must be a non-empty string under 1000 characters.' });
+        }
+        logger.info('CARDS', 'Refine preview start', { userId: req.user?.id, count: utterances.length, language: language || 'en' });
+        const pairs = await cardsService.refineUtterancesOnly(utterances, language || 'en');
+        logger.info('CARDS', 'Refine preview done', { userId: req.user?.id, pairsCount: pairs.length });
+        return res.status(200).json({ success: true, pairs });
+    } catch (error) {
+        logger.error('CARDS', 'Refine preview error', { userId: req.user?.id, error: error.message });
+        return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    }
+};
+
+export const saveRefinedCards = async (req, res) => {
+    try {
+        const { pairs, language } = req.body;
+        if (!pairs || !Array.isArray(pairs) || pairs.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid or empty pairs array' });
+        }
+        if (pairs.some(p => typeof p.original !== 'string' || typeof p.refined !== 'string')) {
+            return res.status(400).json({ success: false, message: 'Each pair must have original and refined strings.' });
+        }
+        logger.info('CARDS', 'Save refined start', { userId: req.user?.id, count: pairs.length, language: language || 'en' });
+        const savedCards = await cardsService.savePairsAsCards(pairs, req.user?.id, language || 'en');
+        logger.info('CARDS', 'Save refined done', { userId: req.user?.id, cardsCreated: savedCards.length });
+        return res.status(200).json({ success: true, cardsCreated: savedCards.length });
+    } catch (error) {
+        logger.error('CARDS', 'Save refined error', { userId: req.user?.id, error: error.message });
+        return res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    }
+};
+
 export const suggestSentences = async (req, res) => {
     try {
         const { query, language } = req.body;

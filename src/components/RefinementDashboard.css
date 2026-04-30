@@ -187,6 +187,30 @@
   margin-top: 0.25rem;
 }
 
+/* ─── Single-sentence add button ─────────────────────────────────────── */
+.rf-btn-single {
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--accent-primary);
+  background: transparent;
+  color: var(--accent-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.rf-btn-single:hover:not(:disabled) {
+  background: var(--accent-primary);
+  color: white;
+}
+.rf-btn-single:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
 /* ─── Error ───────────────────────────────────────────────────────────── */
 .rf-error-msg {
   color: #f87171;

@@ -1,9 +1,11 @@
 import express from 'express';
-import { createBatchCards, getDueCards, reviewCard, refineAndCreateCards, listCards, deleteCard, editCard, suggestSentences, continueSentence, moveGroupLanguage } from '../controllers/cardsController.js';
+import { createBatchCards, getDueCards, reviewCard, refineAndCreateCards, previewRefinement, saveRefinedCards, listCards, deleteCard, editCard, suggestSentences, continueSentence, moveGroupLanguage } from '../controllers/cardsController.js';
 
 const router = express.Router();
 
 router.post('/batch', createBatchCards);
+router.post('/refine/preview', previewRefinement);
+router.post('/refine/save', saveRefinedCards);
 router.post('/refine', refineAndCreateCards);
 router.post('/suggest', suggestSentences);
 router.post('/continue', continueSentence);

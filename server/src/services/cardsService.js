@@ -121,13 +121,7 @@ export const updateCard = async (cardId, question, answer, currentUserId) => {
     return await cardsRepository.updateCardContent(cardId, question, answer);
 };
 
-export const processLiveRefinement = async (utterances, currentUserId, language = 'en') => {
-    let userId = currentUserId;
-    if (!userId) {
-        const defaultUser = await userRepository.upsertTestUser();
-        userId = defaultUser.id;
-    }
-
+export const refineUtterancesOnly = async (utterances, language = 'en') => {
     const langName = getLangName(language);
 
     const refinementPrompt = `You are a fluent native ${langName} speaker helping a language learner sound more natural in casual conversation.
@@ -156,7 +150,7 @@ ${JSON.stringify(utterances)}`;
         }
     };
 
-    logger.info('AI', 'processLiveRefinement call', { userId, inputCount: utterances.length, language });
+    logger.info('AI', 'refineUtterancesOnly call', { inputCount: utterances.length, language });
     const aiStart = Date.now();
     const refinementResult = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: refinementPrompt }] }],
@@ -166,9 +160,34 @@ ${JSON.stringify(utterances)}`;
             temperature: 0.3,
         }
     });
-    logger.info('AI', 'processLiveRefinement done', { userId, durationMs: Date.now() - aiStart });
+    logger.info('AI', 'refineUtterancesOnly done', { durationMs: Date.now() - aiStart });
 
-    const pairs = JSON.parse(refinementResult.response.text());
+    return JSON.parse(refinementResult.response.text());
+};
+
+export const savePairsAsCards = async (pairs, currentUserId, language = 'en') => {
+    let userId = currentUserId;
+    if (!userId) {
+        const defaultUser = await userRepository.upsertTestUser();
+        userId = defaultUser.id;
+    }
+
+    const sentencesToSave = pairs.map(p =>
+        p.refined && p.refined.trim() !== p.original.trim() ? p.refined : p.original
+    );
+
+    return await processBatchTranslation(sentencesToSave, userId, language);
+};
+
+export const processLiveRefinement = async (utterances, currentUserId, language = 'en') => {
+    let userId = currentUserId;
+    if (!userId) {
+        const defaultUser = await userRepository.upsertTestUser();
+        userId = defaultUser.id;
+    }
+
+    logger.info('AI', 'processLiveRefinement call', { userId, inputCount: utterances.length, language });
+    const pairs = await refineUtterancesOnly(utterances, language);
 
     const refinedSentences = pairs
         .filter(p => p.refined && p.refined.trim() !== p.original.trim())
