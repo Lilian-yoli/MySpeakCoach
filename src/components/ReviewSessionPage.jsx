@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useReviewSession } from '../hooks/useReviewSession';
+import { useKokoroTTS } from '../hooks/useKokoroTTS';
 import './ReviewSessionPage.css';
 
 /* ─── helpers ──────────────────────────────────────────────────────────── */
@@ -9,28 +10,18 @@ const TYPE_META = {
   CONTEXT:   { label: '情境作答',  emoji: '🌐', badgeClass: 'badge-context',   hint: '閱讀情境敘述後作答' },
 };
 
-const LANG_LOCALE = {
-  en: 'en-US',
-  ja: 'ja-JP',
-  fr: 'fr-FR',
-  ko: 'ko-KR',
-  es: 'es-ES',
-  de: 'de-DE',
-};
-
 /** CLOZE 唸完整原句，其餘唸 answer（目標語言句子） */
 function getTargetText(card) {
   return card.cardType === 'CLOZE' ? card.originalText : card.answer;
 }
 
-function speakCard(card, lang = 'en') {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(getTargetText(card));
-  utter.lang = LANG_LOCALE[lang] ?? 'en-US';
-  utter.rate = lang === 'ja' || lang === 'ko' ? 0.8 : 0.9;
-  window.speechSynthesis.speak(utter);
-}
+const TTS_ICON = {
+  idle:     '🔊',
+  loading:  '⏳',
+  ready:    '🔊',
+  speaking: '🔉',
+  error:    '🔇',
+};
 
 /** 比較答案：去頭尾空白、不分大小寫、忽略標點 */
 function normalise(str) {
@@ -84,6 +75,8 @@ export default function ReviewSessionPage({ onBack, activeLang = 'en' }) {
     revealAnswer,
     markReviewed,
   } = useReviewSession(activeLang);
+
+  const { speak, ttsState } = useKokoroTTS();
 
   const [userInput, setUserInput]     = useState('');
   const [checkResult, setCheckResult] = useState(null); // null | 'correct' | 'incorrect'
@@ -195,11 +188,12 @@ export default function ReviewSessionPage({ onBack, activeLang = 'en' }) {
           <QuestionText cardType={currentCard.cardType} question={currentCard.question} />
           <button
             className="btn-tts"
-            onClick={() => speakCard(currentCard, activeLang)}
-            title="朗讀句子"
+            onClick={() => speak(getTargetText(currentCard), activeLang)}
+            disabled={ttsState === 'loading' || ttsState === 'speaking'}
+            title={ttsState === 'loading' ? '載入語音模型中（首次約需數秒）…' : '朗讀句子'}
             aria-label="朗讀句子"
           >
-            🔊
+            {TTS_ICON[ttsState] ?? '🔊'}
           </button>
         </div>
 
