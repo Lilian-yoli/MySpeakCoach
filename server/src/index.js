@@ -11,6 +11,7 @@ import healthRoute from './routes/health.js';
 import cardsRoute from './routes/cards.js';
 import authRoute from './routes/auth.js';
 import languagesRoute from './routes/languages.js';
+import ttsRoute from './routes/tts.js';
 import { authenticate } from './middleware/authMiddleware.js';
 import { logger } from './utils/logger.js';
 
@@ -63,6 +64,14 @@ const authLimiter = rateLimit({
   message: { error: 'Too many auth attempts, please try again later.' },
 });
 
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'TTS request limit reached, please wait.' },
+});
+
 app.options('/{*path}', cors(corsOptions));
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50kb' }));
@@ -82,6 +91,7 @@ app.use('/api', generalLimiter);
 app.use('/api/auth', authLimiter);
 
 app.use('/api/health', healthRoute);
+app.use('/api/tts', ttsLimiter, ttsRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/cards/batch', aiLimiter);
 app.use('/api/cards/refine', aiLimiter);
