@@ -9,8 +9,8 @@ export const createBatchCards = async (req, res) => {
         if (!inputs || !Array.isArray(inputs) || inputs.length === 0) {
             return res.status(400).json({ success: false, message: 'Invalid or empty inputs array' });
         }
-        if (inputs.length > 10) {
-            return res.status(400).json({ success: false, message: 'inputs must contain 1–10 items per request.' });
+        if (inputs.length > 30) {
+            return res.status(400).json({ success: false, message: 'inputs must contain 1–30 items per request.' });
         }
         if (inputs.some(s => typeof s !== 'string' || s.trim().length === 0 || s.length > 500)) {
             return res.status(400).json({ success: false, message: 'Each input must be a non-empty string under 500 characters.' });
